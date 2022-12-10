@@ -1,12 +1,13 @@
 // import 'bootstrap/dist/css/bootstrap.css';
 import '@fortawesome/fontawesome-svg-core/styles.css';
-import Sidebar from "../components/Sidebar";
 import '@fortawesome/fontawesome-svg-core/styles.css';
 import 'fontawesome-4.7/css/font-awesome.min.css';
-import "../styles/globals.css";
+//import "../styles/globals.css";
 import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
 import Head from "next/head";
+
+import NavBar from '../components/Navbar';
 
 import { NextUIProvider } from '@nextui-org/react';
 
@@ -34,7 +35,7 @@ function MyApp({ Component, pageProps }) {
 
     return (
         <NextUIProvider>
-            <Sidebar currentPath={path} auth={auth} />
+            <NavBar />
             <div className="AppContainer">
                 <Component {...pageProps} />
             </div>
