@@ -7,6 +7,7 @@ import {
     faSearch,
     faSquarePlus,
     faTrashCan,
+    faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
@@ -68,7 +69,11 @@ function Students() {
                 setTotalStudents(res.data.totalStudents);
                 setLoading(false);
             })
-            .then(console.log("refetch done"));
+            .then(console.log("refetch done"))
+            .catch((err) => {
+                console.log(err);
+                setLoading(false);
+            });
     }, [page, limit]);
 
     const handlePageChange = (page) => {
@@ -96,9 +101,32 @@ function Students() {
     return (
         //  header
         <Container>
-            <Grid.Container gap={2} justify="space-between">
-                <Grid xs={12}>
+            <Grid.Container gap={2} justify="flex-start">
+                <Grid xs={12} md={8}>
                     <h2>Students Management</h2>
+                </Grid>
+            </Grid.Container>
+            {/* Buttons */}
+            <Grid.Container gap={2} justify="flex-start">
+                <Grid>
+                    <Button
+                        color="gradient"
+                        auto
+                        size={"md"}
+                        iconRight={<FontAwesomeIcon icon={faSquarePlus} />}
+                    >
+                        Add Student
+                    </Button>
+                </Grid>
+                <Grid>
+                    <Button
+                        color="gradient"
+                        auto
+                        size={"md"}
+                        iconRight={<FontAwesomeIcon icon={faXmark} />}
+                    >
+                        Delete
+                    </Button>
                 </Grid>
             </Grid.Container>
             {/* Table */}
@@ -107,6 +135,7 @@ function Students() {
                     height: "auto",
                     width: "100%",
                 }}
+                selectionMode="multiple"
             >
                 <Table.Header columns={col}>
                     {(column) => (
@@ -134,75 +163,3 @@ function Students() {
 }
 
 export default Students;
-
-// <Table.Header columns={columns}>
-//                                 {(column) => (
-//                                     <Table.Column
-//                                         key={column.key}
-
-//                                     >
-//                                         {column.name}
-//                                     </Table.Column>
-
-//                                 )}
-//                             </Table.Header>
-//                             <Table.Body items={filteredData}>
-//                                 {(item) => (
-//                                     <Table.Row key={item.key}>
-//                                         <Table.Cell>{item.id}</Table.Cell>
-//                                         <Table.Cell>{item.assigned}</Table.Cell>
-//                                         <Table.Cell>
-
-//                                             <Badge
-//                                                 color={matchStatusBadgeColor(item.status)}
-//                                                 size="md"
-//                                                 style={{ width: "60px" }}
-//                                             >
-//                                                 {item.status}
-//                                             </Badge>
-
-//                                         </Table.Cell>
-//                                         <Table.Cell>
-//                                             <FontAwesomeIcon icon={faCircleInfo} />
-//                                         </Table.Cell>
-//                                         <Table.Cell>2021-05-01 12:00:00</Table.Cell>
-//                                         <Table.Cell>
-//                                             <Grid.Container gap={1}>
-//                                                 <Grid xs={4}>
-//                                                     <Button
-//                                                         color="primary"
-//                                                         size="xs"
-//                                                         className="rounded-10"
-//                                                         icon={<FontAwesomeIcon icon={faEdit} />}
-
-//                                                     >
-//                                                         Edit
-//                                                     </Button>
-//                                                 </Grid>
-//                                                 <Grid xs={2}>
-//                                                     <Button
-//                                                         color="error"
-//                                                         size="xs"
-//                                                         className="rounded-10"
-//                                                         icon={<FontAwesomeIcon icon={faTrashCan} />}
-//                                                     >
-//                                                         Delete
-//                                                     </Button>
-//                                                 </Grid>
-//                                             </Grid.Container>
-//                                         </Table.Cell>
-//                                     </Table.Row>
-//                                 )}
-
-//                             </Table.Body>
-
-//                         </Table>
-//                     </div>
-//                     <div
-//                         className="pagination d-flex align-items-center py-4 border-top px-2"
-//                         style={{
-//                             position: "sticky",
-//                             bottom: 0,
-//                             boxShadow: "0px 0px 1px #fff",
-//                             backgroundColor: "#000",
-//                         }}
