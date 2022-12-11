@@ -9,6 +9,8 @@ import {
     faTrashCan,
     faXmark,
     faUserGroup,
+    faPlugCircleBolt,
+    faPlusCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
@@ -138,7 +140,11 @@ function Students() {
                         color="gradient"
                         auto
                         size={"md"}
-                        iconRight={<FontAwesomeIcon icon={faSquarePlus} />}
+                        iconRight={<FontAwesomeIcon icon={faPlusCircle} />}
+                        onClick={() => {
+                            // redirect to register student page
+                            window.location.href = "/students/register";
+                        }}
                     >
                         Register Student
                     </Button>
@@ -228,7 +234,6 @@ function Students() {
                 {loading ? null : (
                     <Table.Pagination
                         total={totalPages}
-                        on
                         color="gradient"
                         shadow
                         noMargin
