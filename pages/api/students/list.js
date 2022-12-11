@@ -8,6 +8,30 @@ export default async function handler(req, res) {
         return res.status("405").json({ message: "Method not allowed" });
     }
 
+    const { getid } = req.query;
+
+    // default query
+    let currentGetid = getid ? getid : 0;
+    if (currentGetid !== 0) {
+        if (isNaN(currentGetid) || currentGetid <= 0) {
+            return res.status("400").json({ message: "Invalid id" });
+        } 
+        // return all student id of the center
+        let students;
+        let getStudentsQuery = (cen_id) => {
+            const query = `SELECT \`student_id\` FROM \`Student\` WHERE \`center_id\` = ${cen_id};`;
+            return query;
+        };
+        try {
+            students = await executeQuery(getStudentsQuery(currentGetid));
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+        return res.status("200").json({
+            results: students,
+        });
+    }
+
     // get total students
     let totalStudents;
     try {

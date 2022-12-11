@@ -11,6 +11,7 @@ import {
     faUserGroup,
     faPlugCircleBolt,
     faPlusCircle,
+    faEye,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
@@ -26,7 +27,6 @@ import {
     useAsyncList,
     useCollator,
 } from "@nextui-org/react";
-
 
 const API = "http://localhost:3000/api/students";
 const actionsAPI = ["list", "create"];
@@ -194,7 +194,19 @@ function Students() {
                             <Table.Cell>{student.phone}</Table.Cell>
                             {/* Actions */}
                             <Table.Cell>
-                                <Grid.Container gap={2} justify="flex-start">
+                                <Grid.Container gap={2} justify="flex-end">
+                                    <Grid>
+                                        <Button
+                                            color="gradient"
+                                            auto
+                                            size={"xs"}
+                                            iconRight={
+                                                <FontAwesomeIcon icon={faEye} />
+                                            }
+                                        >
+                                            View
+                                        </Button>
+                                    </Grid>
                                     <Grid>
                                         <Button
                                             color="gradient"
