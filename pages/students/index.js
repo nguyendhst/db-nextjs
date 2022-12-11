@@ -8,6 +8,7 @@ import {
     faSquarePlus,
     faTrashCan,
     faXmark,
+    faUserGroup,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 
@@ -15,13 +16,15 @@ import { useEffect, useState } from "react";
 import {
     Table,
     Badge,
+    Text,
     Pagination,
     Button,
     Grid,
     Container,
+    useAsyncList,
+    useCollator,
 } from "@nextui-org/react";
 
-import axios from "axios";
 
 const API = "http://localhost:3000/api/students";
 const actionsAPI = ["list", "create"];
@@ -32,8 +35,12 @@ const col = [
         label: "Student ID",
     },
     {
-        id: "student_name",
-        label: "Name",
+        id: "fname",
+        label: "First Name",
+    },
+    {
+        id: "lname",
+        label: "Last Name",
     },
     {
         id: "gender",
@@ -47,45 +54,62 @@ const col = [
         id: "phone",
         label: "Phone",
     },
+    {
+        id: "actions",
+        label: "Actions",
+    },
 ];
 
 function Students() {
     const [students, setStudents] = useState([]);
-    const [page, setPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
+
     const [totalStudents, setTotalStudents] = useState(0);
-    const [limit, setLimit] = useState(10);
     const [loading, setLoading] = useState(true);
+    const [itemsPerPage, setItemsPerPage] = useState(3);
+    const [totalPages, setTotalPages] = useState(0);
+    const [search, setSearch] = useState("");
+
+    const collator = useCollator({ numeric: true, localeMatcher: "best fit" });
 
     useEffect(() => {
-        console.log("refetch");
-        setLoading(true);
-        axios
-            .get(`${API}/${actionsAPI[0]}`, { params: { page, limit } })
-            .then((res) => {
-                console.log(res.data);
-                setStudents(res.data.results[0]);
-                setTotalPages(res.data.totalPages);
-                setTotalStudents(res.data.totalStudents);
-                setLoading(false);
-            })
-            .then(console.log("refetch done"))
-            .catch((err) => {
-                console.log(err);
-                setLoading(false);
-            });
-    }, [page, limit]);
+        // re-render when the totalStudents changes
+        console.log("totalStudents: ", totalStudents);
 
-    const handlePageChange = (page) => {
-        setPage(page);
-    };
+        setLoading(false);
+        setTotalPages(Math.ceil(totalStudents / itemsPerPage));
+    }, [totalStudents]);
 
-    const handleLimitChange = (limit) => {
-        setLimit(limit);
-    };
+    async function load({ signal }) {
+        const res = await fetch(`${API}/${actionsAPI[0]}`, {
+            signal,
+        });
+        const json = await res.json();
+        console.log("json:  ", json.results[0]);
+        setTotalStudents(json.totalStudents);
+        return {
+            items: json.results[0],
+        };
+    }
+
+    async function sort({ items, sortDescriptor }) {
+        return {
+            items: items.sort((a, b) => {
+                let first = a[sortDescriptor.column];
+                console.log("f", first);
+                let second = b[sortDescriptor.column];
+                let cmp = collator.compare(first, second);
+                if (sortDescriptor.direction === "descending") {
+                    cmp *= -1;
+                }
+                return cmp;
+            }),
+        };
+    }
+
+    const list = useAsyncList({ load, sort });
 
     const handleDelete = (id) => {
-        setLoading(true);
+        setLoading(false);
         fetch(`${API}/delete?id=${id}`)
             .then((res) => res.json())
             .then((data) => {
@@ -94,7 +118,6 @@ function Students() {
                         students.filter((student) => student.student_id !== id)
                     );
                 }
-                setLoading(false);
             });
     };
 
@@ -103,7 +126,9 @@ function Students() {
         <Container>
             <Grid.Container gap={2} justify="flex-start">
                 <Grid xs={12} md={8}>
-                    <h2>Students Management</h2>
+                    <Text h2 color="primary">
+                        Student Management
+                    </Text>
                 </Grid>
             </Grid.Container>
             {/* Buttons */}
@@ -115,7 +140,7 @@ function Students() {
                         size={"md"}
                         iconRight={<FontAwesomeIcon icon={faSquarePlus} />}
                     >
-                        Add Student
+                        Register Student
                     </Button>
                 </Grid>
                 <Grid>
@@ -123,9 +148,9 @@ function Students() {
                         color="gradient"
                         auto
                         size={"md"}
-                        iconRight={<FontAwesomeIcon icon={faXmark} />}
+                        iconRight={<FontAwesomeIcon icon={faUserGroup} />}
                     >
-                        Delete
+                        Arrange Class
                     </Button>
                 </Grid>
             </Grid.Container>
@@ -135,28 +160,83 @@ function Students() {
                     height: "auto",
                     width: "100%",
                 }}
-                selectionMode="multiple"
+                selectionMode="single"
+                bordered
+                shadow={false}
+                sortDescriptor={list.sortDescriptor}
+                onSortChange={list.sort}
             >
                 <Table.Header columns={col}>
                     {(column) => (
-                        <Table.Column key={column.id}>
+                        <Table.Column
+                            allowsSorting={column.id !== "actions"}
+                            hideHeader={column.id === "actions"}
+                            key={column.id}
+                        >
                             {column.label}
                         </Table.Column>
                     )}
                 </Table.Header>
-                <Table.Body items={students}>
+                <Table.Body items={list.items} loadingState={list.loadingState}>
                     {(student) => (
                         <Table.Row key={student.student_id}>
                             <Table.Cell>{student.student_id}</Table.Cell>
-                            <Table.Cell>
-                                {student.fname + " " + student.lname}
-                            </Table.Cell>
+                            <Table.Cell>{student.fname}</Table.Cell>
+                            <Table.Cell>{student.lname}</Table.Cell>
                             <Table.Cell>{student.gender}</Table.Cell>
                             <Table.Cell>{student.email}</Table.Cell>
                             <Table.Cell>{student.phone}</Table.Cell>
+                            {/* Actions */}
+                            <Table.Cell>
+                                <Grid.Container gap={2} justify="flex-start">
+                                    <Grid>
+                                        <Button
+                                            color="gradient"
+                                            auto
+                                            size={"xs"}
+                                            iconRight={
+                                                <FontAwesomeIcon
+                                                    icon={faEdit}
+                                                />
+                                            }
+                                        >
+                                            Edit
+                                        </Button>
+                                    </Grid>
+                                    <Grid>
+                                        <Button
+                                            color="error"
+                                            auto
+                                            size={"xs"}
+                                            iconRight={
+                                                <FontAwesomeIcon
+                                                    icon={faTrashCan}
+                                                />
+                                            }
+                                            onClick={() =>
+                                                handleDelete(student.student_id)
+                                            }
+                                        >
+                                            Delete
+                                        </Button>
+                                    </Grid>
+                                </Grid.Container>
+                            </Table.Cell>
                         </Table.Row>
                     )}
                 </Table.Body>
+                {loading ? null : (
+                    <Table.Pagination
+                        total={totalPages}
+                        on
+                        color="gradient"
+                        shadow
+                        noMargin
+                        align="center"
+                        rowsPerPage={itemsPerPage}
+                        onPageChange={(page) => console.log({ page })}
+                    />
+                )}
             </Table>
         </Container>
     );

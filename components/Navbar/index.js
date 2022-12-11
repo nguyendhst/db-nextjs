@@ -1,4 +1,4 @@
-import { Navbar, Button, Link, Text } from "@nextui-org/react";
+import { Navbar, Button, Link, Text, Dropdown } from "@nextui-org/react";
 import React from "react";
 
 const NavBar = () => {
@@ -9,7 +9,10 @@ const NavBar = () => {
                     <Text h3>ABC Language Center</Text>
                 </Link>
             </Navbar.Brand>
-            <Navbar.Content hideIn="xs" variant="highlight-rounded">
+            <Navbar.Content
+                hideIn="xs"
+                variant="highlight-rounded"
+            >
                 <Navbar.Link href="/students">Students</Navbar.Link>
                 <Navbar.Link href="#">Teachers</Navbar.Link>
                 <Navbar.Link href="#">Employees</Navbar.Link>
@@ -28,6 +31,5 @@ const NavBar = () => {
         </Navbar>
     );
 };
-
 
 export default NavBar;
