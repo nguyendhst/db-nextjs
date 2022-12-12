@@ -28,13 +28,13 @@ import {
     useCollator,
 } from "@nextui-org/react";
 
-const API = "http://localhost:3000/api/students";
+const API = "http://localhost:3000/api/teachers";
 const actionsAPI = ["list", "create"];
 
 const col = [
     {
-        id: "student_id",
-        label: "Student ID",
+        id: "teacher_id",
+        label: "Teacher ID",
     },
     {
         id: "fname",
@@ -62,10 +62,10 @@ const col = [
     },
 ];
 
-function Students() {
-    const [students, setStudents] = useState([]);
+function Teachers() {
+    const [teachers, setTeachers] = useState([]);
 
-    const [totalStudents, setTotalStudents] = useState(0);
+    const [totalTeachers, setTotalTeachers] = useState(0);
     const [loading, setLoading] = useState(true);
     const [itemsPerPage, setItemsPerPage] = useState(6);
     const [totalPages, setTotalPages] = useState(0);
@@ -74,12 +74,12 @@ function Students() {
     const collator = useCollator({ numeric: true, localeMatcher: "best fit" });
 
     useEffect(() => {
-        // re-render when the totalStudents changes
-        console.log("totalStudents: ", totalStudents);
+        // re-render when the totalTeachers changes
+        console.log("totalTeachers: ", totalTeachers);
 
         setLoading(false);
-        setTotalPages(Math.ceil(totalStudents / itemsPerPage));
-    }, [totalStudents]);
+        setTotalPages(Math.ceil(totalTeachers / itemsPerPage));
+    }, [totalTeachers]);
 
     async function load({ signal }) {
         const res = await fetch(`${API}/${actionsAPI[0]}`, {
@@ -87,7 +87,7 @@ function Students() {
         });
         const json = await res.json();
         console.log("json:  ", json.results[0]);
-        setTotalStudents(json.totalStudents);
+        setTotalTeachers(json.totalTeachers);
         return {
             items: json.results[0],
         };
@@ -116,8 +116,8 @@ function Students() {
             .then((res) => res.json())
             .then((data) => {
                 if (data.success) {
-                    setStudents(
-                        students.filter((student) => student.student_id !== id)
+                    setTeachers(
+                        teachers.filter((teacher) => teacher.teacher_id !== id)
                     );
                 }
             });
@@ -129,7 +129,7 @@ function Students() {
             <Grid.Container gap={2} justify="flex-start">
                 <Grid xs={12} md={8}>
                     <Text h2 color="primary">
-                        Student Management
+                        Teacher Management
                     </Text>
                 </Grid>
             </Grid.Container>
@@ -141,12 +141,12 @@ function Students() {
                         auto
                         size={"md"}
                         iconRight={<FontAwesomeIcon icon={faPlusCircle} />}
-                        onClick={() => {
-                            // redirect to register student page
-                            window.location.href = "/students/register";
-                        }}
+                        // onClick={() => {
+                        //     // redirect to register teacher page
+                        //     // window.location.href = "/teachers/register";
+                        // }}
                     >
-                        Register Student
+                        Register Teacher
                     </Button>
                 </Grid>
                 <Grid>
@@ -184,14 +184,14 @@ function Students() {
                     )}
                 </Table.Header>
                 <Table.Body items={list.items} loadingState={list.loadingState}>
-                    {(student) => (
-                        <Table.Row key={student.student_id}>
-                            <Table.Cell>{student.student_id}</Table.Cell>
-                            <Table.Cell>{student.fname}</Table.Cell>
-                            <Table.Cell>{student.lname}</Table.Cell>
-                            <Table.Cell>{student.gender}</Table.Cell>
-                            <Table.Cell>{student.email}</Table.Cell>
-                            <Table.Cell>{student.phone}</Table.Cell>
+                    {(teacher) => (
+                        <Table.Row key={teacher.teacher_id}>
+                            <Table.Cell>{teacher.teacher_id}</Table.Cell>
+                            <Table.Cell>{teacher.fname}</Table.Cell>
+                            <Table.Cell>{teacher.lname}</Table.Cell>
+                            <Table.Cell>{teacher.gender}</Table.Cell>
+                            <Table.Cell>{teacher.email}</Table.Cell>
+                            <Table.Cell>{teacher.phone}</Table.Cell>
                             {/* Actions */}
                             <Table.Cell>
                                 <Grid.Container gap={2} justify="flex-end">
@@ -232,7 +232,7 @@ function Students() {
                                                 />
                                             }
                                             onClick={() =>
-                                                handleDelete(student.student_id)
+                                                handleDelete(teacher.teacher_id)
                                             }
                                         >
                                             Delete
@@ -259,4 +259,4 @@ function Students() {
     );
 }
 
-export default Students;
+export default Teachers;

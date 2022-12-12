@@ -10,6 +10,8 @@ import {
     Dropdown,
     Spacer,
     Modal,
+    Table,
+    Checkbox,
 } from "@nextui-org/react";
 
 import axios from "axios";
@@ -87,10 +89,83 @@ const generateNextStudentID = (list) => {
     return nextStudentID;
 };
 
+const validateForm = (form) => {
+    // student_id must be of the form S00000
+    const student_id = form.student_id;
+    const student_id_regex = /^S\d{5}$/;
+    if (!student_id_regex.test(student_id)) {
+        return "Student ID must be of the form S00000";
+    }
+    // fname must be between 2 and 50 characters
+    const fname = form.fname;
+    if (fname.length < 2 || fname.length > 50) {
+        return "First name must be between 2 and 50 characters";
+    }
+    // lname must be between 2 and 50 characters
+    const lname = form.lname;
+    if (lname.length < 2 || lname.length > 50) {
+        return "Last name must be between 2 and 50 characters";
+    }
+    // email must be a valid email
+    const email = form.email;
+    const email_regex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+    if (!email_regex.test(email)) {
+        return "Email must be a valid email";
+    }
+    // phone must be a valid phone number
+    const phone = form.phone;
+    const phone_regex = /^\d{12}$/;
+    if (!phone_regex.test(phone)) {
+        return "Phone must be a valid phone number";
+    }
+    // address must be at most 100 characters
+    const address = form.address;
+    if (address.length > 100) {
+        return "Address must be at most 100 characters";
+    }
+    // center_id must be a valid center_id
+    const center_id = form.center_id;
+    if (isNaN(center_id)) {
+        return "Center ID must be a valid center ID";
+    }
+    // course_id must be a valid course_id
+    const course_id = form.course_id;
+    if (isNaN(course_id)) {
+        return "Course ID must be a valid course ID";
+    }
+    // username must be between 5 and 50 characters
+    const username = form.username;
+    if (username.length < 5 || username.length > 50) {
+        return "Username must be between 5 and 50 characters";
+    }
+    // password must be between 5 and 50 characters
+    const password = form.password;
+    if (password.length < 5 || password.length > 50) {
+        return "Password must be between 5 and 50 characters";
+    }
+    // dob must be a valid date
+    const dob = form.dob;
+    const dob_regex = /^\d{4}-\d{2}-\d{2}$/;
+    if (!dob_regex.test(dob)) {
+        return "Date of birth must be a valid date";
+    } else {
+        // must be atleast 10 years old
+        const dobDate = new Date(dob);
+        const today = new Date();
+        const age = today.getFullYear() - dobDate.getFullYear();
+        if (age < 10) {
+            return "Student must be atleast 10 years old";
+        }
+    }
+    return null;
+};
+
 const studentIDAPI = "http://localhost:3000/api/students/list?getid=";
 const programmesAPI = "http://localhost:3000/api/courses?programmes=";
 const coursesAPI = "http://localhost:3000/api/courses";
 const centerAPI = "http://localhost:3000/api/centers";
+const classAPI = "http://localhost:3000/api/classes";
+const studentRegisterAPI = "http://localhost:3000/api/students/register";
 
 function RegisterForm() {
     const [student, setStudent] = useState({});
@@ -100,8 +175,12 @@ function RegisterForm() {
     const [programmesList, setProgrammesList] = useState([]);
     const [course, setCourse] = useState(new Set(["Select"]));
     const [coursesList, setCoursesList] = useState([]);
+    const [classs, setClass] = useState(new Set(["Select"]));
+    const [classesList, setClassesList] = useState([]);
     const [studentID, setStudentID] = useState("S00000");
     const [studentIDList, setStudentIDList] = useState([]);
+
+    const [scheduleVisible, setScheduleVisible] = useState(false);
 
     // inital fetch
     useEffect(() => {
@@ -128,11 +207,18 @@ function RegisterForm() {
             console.log(res.data);
             setStudentIDList(res.data.results);
         });
+
+        // reset all
+        setProgramme(new Set(["Select"]));
+        setCourse(new Set(["Select"]));
+        setClass(new Set(["Select"]));
     }, [center]);
 
     useEffect(() => {
         console.log("programme list", programmesList);
-        if (programme == "Select") {
+        if (programme == "Select" || getValueFromSet(center) == "Select") {
+            // reset
+            // setProgramme(new Set(["Select"]));
             return;
         }
         const pr = getValueFromSet(programme);
@@ -159,31 +245,100 @@ function RegisterForm() {
         setCourse(new Set(["Select"]));
     }, [programme]);
 
+    useEffect(() => {
+        if (course == "Select") {
+            return;
+        }
+        const c = getValueFromSet(course);
+        console.log("getValueFromSet(course)", c);
+        console.log("list", coursesList);
+        const courseID =
+            coursesList.find((p) => p.course_name == c)?.course_id ?? -1;
+        console.log("course id", courseID);
+        if (courseID < 0) {
+            return;
+        }
+        axios
+            .get(
+                classAPI +
+                    "?center=" +
+                    getValueFromSet(center) +
+                    "&course=" +
+                    courseID
+            )
+            .then((res) => {
+                console.log("class", res.data);
+                setClassesList(res.data.results[0]);
+            });
+        // reload class dropdown
+        // setClass(new Set(["Select"]));
+    }, [course]);
+
     const selectedCenter = useMemo(() => center, [center]);
 
     const selectedProgramme = useMemo(() => programme, [programme]);
 
     const selectedCourse = useMemo(() => course, [course]);
 
+    const selectedClass = useMemo(() => classs, [classs]);
+
     const handleChange = (e) => {
         setStudent({ ...student, [e.target.name]: e.target.value });
         console.log("change", e.target.name, e.target.value);
         console.log(student);
+        console.log("id: ", studentID);
     };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-
-        let newData = {
+    const handleSubmit = () => {
+        const courseID =
+            coursesList.find((p) => p.course_name == getValueFromSet(course))
+                ?.course_id ?? -1;
+        if (courseID < 0) {
+            return;
+        }
+        const data = {
             student_id: studentID,
-            center_id: getCenterID(center),
             fname: student.fname,
+            lname: student.lname,
+            email: student.email,
+            phone: student.phone,
+            gender: student.gender,
+            dob: student.dob,
+            address: student.address,
+            username: student.username,
+            password: student.password,
+            center_id: getValueFromSet(center),
+            course_id: courseID.toString(),
         };
+        let err;
+        if ((err = validateForm(data))) {
+            console.log(data);
+            axios
+                .post(studentRegisterAPI, data)
+                .then((res) => {
+                    console.log(res.data);
+                    if (res.data.status == "success") {
+                        // alert user
+                        alert("Successfully registered");
+                        // redirect to student management
+                        window.location.href = "/students";
+                    }
+                })
+                .catch((err) => {
+                    console.log(err);
+                });
+        } else {
+            // alert user
+            alert(err);
+        }
     };
 
-    const handleSchedule = (e) => {
-        e.preventDefault();
-        console.log("schedule");
+    const handleSchedule = () => {
+        setScheduleVisible(true);
+    };
+
+    const handleCloseSchedule = () => {
+        setScheduleVisible(false);
     };
 
     return (
@@ -207,7 +362,7 @@ function RegisterForm() {
                 </Grid>
             </Grid.Container>
 
-            <Spacer y={2} />
+            <Spacer y={1} />
 
             {/*  2 x 2 Grid boxes */}
             <Grid.Container gap={2}>
@@ -265,7 +420,14 @@ function RegisterForm() {
                                 <Input
                                     name="student_id"
                                     onChange={handleChange}
-                                    value={generateNextStudentID(studentIDList)}
+                                    value={() => {
+                                        const id =
+                                            generateNextStudentID(
+                                                studentIDList
+                                            );
+                                        setStudentID(id);
+                                        return id;
+                                    }}
                                 />
                             </Grid>
                         </Grid.Container>
@@ -344,9 +506,40 @@ function RegisterForm() {
                                     </Dropdown.Menu>
                                 </Dropdown>
                             </Grid>
-                            <Grid xs={12} sm={12}>
+
+                            {/* <Grid xs={12} sm={12} md={6}>
+                                <Text h5>Class:</Text>
+                                <Spacer y={1} x={2} />
+                                <Dropdown>
+                                    <Dropdown.Button
+                                        flat
+                                        color="secondary"
+                                        css={{ tt: "capitalize" }}
+                                    >
+                                        {selectedClass}
+                                    </Dropdown.Button>
+                                    <Dropdown.Menu
+                                        aria-label="Single selection actions"
+                                        color="secondary"
+                                        disallowEmptySelection
+                                        selectionMode="single"
+                                        selectedKeys={classs}
+                                        onSelectionChange={setClass}
+                                    >
+                                        {classesList.map((classs) => (
+                                            <Dropdown.Item
+                                                key={classs.class_name}
+                                            >
+                                                {classs.class_name}
+                                            </Dropdown.Item>
+                                        ))}
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                            </Grid> */}
+                            {/* <Grid xs={12} sm={12}>
                                 <Button
                                     shadow
+                                    ghost
                                     type="button"
                                     color="gradient"
                                     style={{ width: "100%" }}
@@ -354,7 +547,19 @@ function RegisterForm() {
                                 >
                                     Scheduling
                                 </Button>
-                            </Grid>
+                                <Modal
+                                    open={scheduleVisible}
+                                    onClose={handleCloseSchedule}
+                                    animated={false}
+                                >
+                                    <Modal.Header>
+                                        <Text h4>Class Scheduling</Text>
+                                    </Modal.Header>
+                                    <Modal.Body>
+                               
+                                    </Modal.Body>
+                                </Modal>
+                            </Grid> */}
                         </Grid.Container>
                     </Container>
                 </Grid>
@@ -391,6 +596,20 @@ function RegisterForm() {
                                     />
                                 </Grid>
                             ))}
+                            {/* date of birth */}
+                            <Grid xs={12} sm={12}>
+                                <Spacer y={2} />
+                                <Input
+                                    fullWidth
+                                    type={"date"}
+                                    labelLeft={"Date of Birth"}
+                                    name={"dob"}
+                                    onChange={handleChange}
+                                    clearable
+                                    bordered
+                                    required
+                                />
+                            </Grid>
                         </Grid.Container>
                     </Container>
                 </Grid>
@@ -399,7 +618,7 @@ function RegisterForm() {
                     <Container xs={12}>
                         {/* Title */}
                         <Text color="primary" h4>
-                            4. Invoice
+                            4. Create Account
                         </Text>
                         <Spacer y={1} />
 
@@ -412,12 +631,33 @@ function RegisterForm() {
                             }}
                         >
                             <Grid xs={12} sm={12}>
-                                <Text h5>Invoice ID:</Text>
+                                <Text h5>Username:</Text>
 
                                 <Spacer y={1} x={2} />
                                 <Input
-                                    name="invoice_id"
+                                    name="username"
                                     initialValue="Not set"
+                                    fullWidth
+                                    labelLeft="Username"
+                                    onChange={handleChange}
+                                    clearable
+                                    bordered
+                                    required
+                                />
+                            </Grid>
+                            <Grid xs={12} sm={12}>
+                                <Text h5>Password:</Text>
+
+                                <Spacer y={1} x={2} />
+                                <Input.Password
+                                    name="password"
+                                    initialValue="Not set"
+                                    fullWidth
+                                    labelLeft="Password"
+                                    onChange={handleChange}
+                                    clearable
+                                    bordered
+                                    required
                                 />
                             </Grid>
                             {/* submit button */}
